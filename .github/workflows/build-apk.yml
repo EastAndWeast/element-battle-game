@@ -1,11 +1,7 @@
-name: Build APK
+name: Simple APK Build
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:  # 手动触发
 
 jobs:
   build:
@@ -23,53 +19,16 @@ jobs:
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
-      with:
-        api-level: 34
-        build-tools: 34.0.0
-
-    - name: Cache Gradle packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Check Gradle version
-      run: ./gradlew --version
-
-    - name: List project structure
-      run: |
-        echo "Project structure:"
-        find . -name "*.gradle*" -type f
-        ls -la
-
     - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace --info
+      run: ./gradlew assembleDebug
 
-    - name: List build outputs
-      run: |
-        echo "Build outputs:"
-        find . -name "*.apk" -type f
-        ls -la app/build/outputs/apk/ || echo "APK directory not found"
-
-    - name: Upload Debug APK
+    - name: Upload APK
       uses: actions/upload-artifact@v4
-      if: success()
       with:
-        name: ElementBattle-Debug
-        path: app/build/outputs/apk/debug/*.apk
+        name: ElementBattle-APK
+        path: app/build/outputs/apk/debug/app-debug.apk
 
-    - name: Upload build logs on failure
-      uses: actions/upload-artifact@v4
-      if: failure()
-      with:
-        name: build-logs
-        path: |
-          ~/.gradle/daemon/*/daemon-*.out.log
-          build/reports/
