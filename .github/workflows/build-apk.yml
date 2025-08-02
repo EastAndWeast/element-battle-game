@@ -23,6 +23,9 @@ jobs:
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
+      with:
+        api-level: 34
+        build-tools: 34.0.0
 
     - name: Cache Gradle packages
       uses: actions/cache@v4
@@ -37,21 +40,36 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Clean project
-      run: ./gradlew clean
+    - name: Check Gradle version
+      run: ./gradlew --version
+
+    - name: List project structure
+      run: |
+        echo "Project structure:"
+        find . -name "*.gradle*" -type f
+        ls -la
 
     - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace
+      run: ./gradlew assembleDebug --stacktrace --info
+
+    - name: List build outputs
+      run: |
+        echo "Build outputs:"
+        find . -name "*.apk" -type f
+        ls -la app/build/outputs/apk/ || echo "APK directory not found"
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
+      if: success()
       with:
         name: ElementBattle-Debug
-        path: app/build/outputs/apk/debug/app-debug.apk
+        path: app/build/outputs/apk/debug/*.apk
 
-    - name: Upload Release APK (if exists)
+    - name: Upload build logs on failure
       uses: actions/upload-artifact@v4
-      if: always()
+      if: failure()
       with:
-        name: ElementBattle-Release
-        path: app/build/outputs/apk/release/app-release.apk
+        name: build-logs
+        path: |
+          ~/.gradle/daemon/*/daemon-*.out.log
+          build/reports/
